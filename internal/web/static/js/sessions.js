@@ -19,7 +19,9 @@ function renderProjects() {
   const projects = [...new Set(state.sessions.map(projectOf).filter(Boolean))].sort((a, b) => a.localeCompare(b));
   $("project").replaceChildren(new Option("All projects", ""), ...projects.map((name) => new Option(name, name)));
   $("project").value = projects.includes(current) ? current : "";
-  if ($("project").value) delete $("project").dataset.wanted;
+  // Keep the choice while computers are still answering: its project may arrive with them.
+  if ($("project").value || !state.pending) delete $("project").dataset.wanted;
+  else if (current) $("project").dataset.wanted = current;
   $("project").hidden = projects.length < 2;
 }
 
