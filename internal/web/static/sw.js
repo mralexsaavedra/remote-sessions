@@ -2,7 +2,7 @@
 const CACHE = "remote-sessions-v2";
 const SHELL = [
   "./", "app.js", "app.css", "jsqr.js", "manifest.webmanifest", "icon-192.png", "apple-touch-icon.png",
-  "js/api.js", "js/create.js", "js/diagnostics.js", "js/dom.js", "js/nav.js", "js/pair.js", "js/scanner.js", "js/sessions.js", "js/token.js",
+  "js/api.js", "js/create.js", "js/dom.js", "js/nav.js", "js/pair.js", "js/scanner.js", "js/sessions.js", "js/token.js",
 ];
 
 self.addEventListener("install", (event) => {

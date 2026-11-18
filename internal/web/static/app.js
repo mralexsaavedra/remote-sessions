@@ -3,13 +3,13 @@
 
 import { whenUnauthorized } from "./js/api.js";
 import { create, showCreate } from "./js/create.js";
-import { registerServiceWorker, showDiagnostics } from "./js/diagnostics.js";
 import { $ } from "./js/dom.js";
 import { setUpPairing, showPair } from "./js/pair.js";
 import { showList } from "./js/sessions.js";
 import { forgetToken, token } from "./js/token.js";
 
-registerServiceWorker();
+// Offline shell. Chrome refuses service workers on a self-signed certificate; the page works without one.
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js", { scope: "/app/" }).catch(() => {});
 setUpPairing();
 whenUnauthorized(() => {
   forgetToken();
@@ -19,9 +19,7 @@ whenUnauthorized(() => {
 $("back").onclick = () => history.back();
 $("new").onclick = () => { history.pushState({ view: "create" }, ""); showCreate(); };
 $("create-start").onclick = create;
-$("diag-open").onclick = showDiagnostics;
-$("diag-close").onclick = () => $("diag").close();
-$("unpair").onclick = () => { forgetToken(); $("diag").close(); showPair(); };
+$("unpair").onclick = () => { forgetToken(); showPair(); };
 window.addEventListener("popstate", () => { if (token()) showList(); });
 
 if (token()) showList(); else showPair();

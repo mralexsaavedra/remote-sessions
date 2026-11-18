@@ -89,17 +89,7 @@ code { font-size: 13px; overflow-wrap: anywhere; }
 #messages li.user { background: var(--user); margin-left: 15%; }
 #messages li .tools { display: block; color: var(--muted); font-size: 13px; margin-top: 4px; }
 .actions { position: sticky; bottom: 0; display: grid; gap: 8px; padding: 8px 0 calc(env(safe-area-inset-bottom) + 8px); background: var(--bg); }
-dialog {
-  border: 1px solid var(--line); border-radius: 14px; background: var(--card); color: var(--text);
-  width: min(560px, calc(100vw - 32px)); max-height: calc(100dvh - 64px); overflow-y: auto; padding: 16px;
-}
-dialog::backdrop { background: rgb(0 0 0 / .4); }
-dialog h2 { margin-top: 0; font-size: 18px; }
-#diag-table { border-collapse: collapse; width: 100%; font-size: 14px; }
-#diag-table td { border-top: 1px solid var(--line); padding: 6px 4px; vertical-align: top; }
-#diag-table td { overflow-wrap: anywhere; }
-#diag-table td:nth-child(2) { width: 40%; }
-.row { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+#unpair { margin-top: 16px; }
 
 @media (min-width: 720px) {
   .actions { grid-template-columns: 1fr 1fr; }
