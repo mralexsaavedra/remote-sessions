@@ -14,10 +14,12 @@ const projectOf = (session) => session.project || "";
 
 // The project filter offers the projects of the conversations loaded so far.
 function renderProjects() {
-  const current = $("project").value;
+  // A project asked for in the address waits here until its option exists.
+  const current = $("project").value || $("project").dataset.wanted || "";
   const projects = [...new Set(state.sessions.map(projectOf).filter(Boolean))].sort((a, b) => a.localeCompare(b));
   $("project").replaceChildren(new Option("All projects", ""), ...projects.map((name) => new Option(name, name)));
   $("project").value = projects.includes(current) ? current : "";
+  if ($("project").value) delete $("project").dataset.wanted;
   $("project").hidden = projects.length < 2;
 }
 
@@ -30,7 +32,7 @@ function matches(session, query, project) {
 
 export function paintList() {
   const query = $("search").value.trim().toLowerCase();
-  const project = $("project").value;
+  const project = $("project").value || $("project").dataset.wanted || "";
   const shown = state.sessions.filter((session) => matches(session, query, project));
   const status = state.pending ? []
     : !state.sessions.length ? ["No conversations yet."]

@@ -9,12 +9,13 @@ import { ADD } from "./js/nav.js";
 import { setUpPairing, showPair } from "./js/pair.js";
 import { paintList, showList } from "./js/sessions.js";
 import { setUpSettings, showSettings } from "./js/settings.js";
+import { readFilters, writeFilters } from "./js/url.js";
 
 // Offline shell. Chrome refuses service workers on a self-signed certificate; the page works without one.
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js", { scope: "/app/" }).catch(() => {});
 
 function home() {
-  if (list().length) showList(); else showPair();
+  if (list().length) { writeFilters(); showList(); } else showPair();
 }
 
 setUpPairing(() => {
@@ -37,10 +38,11 @@ $("computer").onchange = (event) => {
     return;
   }
   select(event.target.value);
+  writeFilters();
   showList();
 };
-$("search").oninput = paintList;
-$("project").onchange = paintList;
+$("search").oninput = () => { writeFilters(); paintList(); };
+$("project").onchange = () => { delete $("project").dataset.wanted; writeFilters(); paintList(); };
 $("settings-open").onclick = () => { history.pushState({ view: "settings" }, ""); showSettings(); };
 setUpSettings({
   done: () => (history.state ? history.back() : home()),
@@ -48,4 +50,4 @@ setUpSettings({
 });
 window.addEventListener("popstate", home);
 
-migrate().then(home);
+migrate().then(() => { readFilters(); home(); });
