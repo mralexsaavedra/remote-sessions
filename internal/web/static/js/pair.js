@@ -28,7 +28,7 @@ async function locate(pairing) {
   }
   const origins = candidateOrigins(pairing);
   const found = await Promise.any(origins.map(async (origin) => {
-    const health = await healthAt(origin);
+    const health = await healthAt(origin, undefined, pairing.token);
     if (health.id !== pairing.id) throw new Error("another computer");
     return { id: health.id, name: health.name, origin };
   })).catch(() => null);

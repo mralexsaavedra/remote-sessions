@@ -77,9 +77,15 @@ export function forget(id) {
 export const slug = (name) => (name || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
   .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 
-/** @param {string} origin @param {number} [timeout] ms @returns {Promise<Health>} */
-export async function healthAt(origin, timeout = 5000) {
-  const response = await fetch(`${origin}/health`, { cache: "no-store", signal: AbortSignal.timeout(timeout) });
+/**
+ * @param {string} origin
+ * @param {number} [timeout] ms
+ * @param {string} [token] another computer answers /health cross-origin only with its key
+ * @returns {Promise<Health>}
+ */
+export async function healthAt(origin, timeout = 5000, token) {
+  const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+  const response = await fetch(`${origin}/health`, { cache: "no-store", headers, signal: AbortSignal.timeout(timeout) });
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   return response.json();
 }
