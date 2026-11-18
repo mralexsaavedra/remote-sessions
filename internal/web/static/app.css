@@ -101,7 +101,8 @@ code { font-size: 13px; overflow-wrap: anywhere; }
 #unpair { margin-top: 16px; }
 
 @media (min-width: 720px) {
-  .actions { grid-template-columns: 1fr 1fr; }
+  /* Visible buttons share the row; a lone one takes it whole instead of sitting in the left half. */
+  .actions { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
   .actions > .error, .actions > input { grid-column: 1 / -1; }
 }
 
