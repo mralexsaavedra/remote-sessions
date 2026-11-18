@@ -1,15 +1,33 @@
 // Which screen is on, and the bar above it.
 
-import { $ } from "./dom.js";
+import { ALL, list, selected } from "./computers.js";
+import { $, el } from "./dom.js";
 import { stopScanner } from "./scanner.js";
 
 const views = ["pair", "list", "detail", "create"];
+export const ADD = "add";
+
+// The computer picker, like the store apps: one computer, all of them, or a new one.
+function renderPicker() {
+  const computers = list();
+  const choice = selected();
+  const options = computers.map((computer) => new Option(computer.name, computer.id));
+  if (computers.length > 1) options.unshift(new Option("All computers", ALL));
+  options.push(new Option("Add a computer…", ADD));
+  $("computer").replaceChildren(...options);
+  $("computer").value = choice === ALL ? ALL : (choice ? choice.id : ADD);
+}
 
 export function show(view, title) {
   if (view !== "pair") stopScanner();
   for (const name of views) $(name).hidden = name !== view;
+  const onList = view === "list";
   $("title").textContent = title || "Remote Sessions";
-  $("back").hidden = view === "list" || view === "pair";
-  $("new").hidden = view !== "list";
+  $("title").hidden = onList && list().length > 0;
+  $("computer").hidden = !onList || list().length === 0;
+  if (onList) renderPicker();
+  $("back").hidden = onList || (view === "pair" && list().length === 0);
+  $("new").hidden = !onList || selected() === ALL;
+  $("unpair").hidden = selected() === ALL;
   window.scrollTo(0, 0);
 }

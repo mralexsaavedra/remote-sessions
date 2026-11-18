@@ -54,6 +54,8 @@ body {
   border-bottom: 1px solid var(--line);
 }
 .bar h1 { flex: 1; margin: 0; font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bar select { flex: 1; min-width: 0; font: inherit; font-size: 18px; font-weight: 600; color: var(--text); background: transparent; border: 0; padding: 4px 0; }
+#pair-links { padding-left: 20px; overflow-wrap: anywhere; }
 main {
   padding: calc(var(--bar) + 12px) max(16px, env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + 24px) max(16px, env(safe-area-inset-left));
   max-width: 720px; margin: 0 auto;

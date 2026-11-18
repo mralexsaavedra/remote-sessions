@@ -1,20 +1,23 @@
-// A new conversation: browse the computer's folders and start Claude Code in one.
+// A new conversation: browse the selected computer's folders and start Claude Code in one.
 
 import { api, describe, launch } from "./api.js";
+import { selected } from "./computers.js";
 import { $, el, setError, setOpenLink } from "./dom.js";
 import { show } from "./nav.js";
 
 let currentFolder = null;
+let computer = null;
 
 export async function showCreate(path) {
-  show("create", "New conversation");
+  if (!path) computer = selected();
+  show("create", `New conversation on ${computer.name}`);
   setError("create-error", null);
   setOpenLink("create-open", null);
   $("create-start").hidden = false;
   $("folder-path").textContent = "Loading…";
   try {
     const query = path ? `?path=${encodeURIComponent(path)}` : "";
-    const listing = await api("GET", `/v1/folders${query}`);
+    const listing = await api(computer, "GET", `/v1/folders${query}`);
     currentFolder = listing.path;
     $("folder-path").textContent = listing.path;
     const items = [];
@@ -22,7 +25,7 @@ export async function showCreate(path) {
     for (const folder of listing.folders) items.push(folderItem(`📁 ${folder.name}`, folder.path));
     $("folders").replaceChildren(...items);
   } catch (error) {
-    $("folder-path").textContent = describe(error);
+    $("folder-path").textContent = describe(error, computer);
   }
 }
 
@@ -39,11 +42,11 @@ export async function create() {
   setError("create-error", null);
   try {
     const title = $("create-title").value.trim();
-    const result = await launch((trustFolder) => api("POST", "/v1/sessions", { cwd: currentFolder, title, trustFolder }));
+    const result = await launch((trustFolder) => api(computer, "POST", "/v1/sessions", { cwd: currentFolder, title, trustFolder }));
     setOpenLink("create-open", result.url);
     button.hidden = true;
   } catch (error) {
-    setError("create-error", describe(error));
+    setError("create-error", describe(error, computer));
   } finally {
     button.disabled = false;
     button.textContent = "Start here";

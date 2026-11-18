@@ -1,20 +1,67 @@
 // Pairing: the same QR code as the store apps, read with the camera or pasted.
+// A code from this page's computer pairs it; a code from another computer pairs that one through its addresses.
 
-import { $, setError } from "./dom.js";
+import { candidateOrigins, list, parsePairing, save } from "./computers.js";
+import { $, el, setError } from "./dom.js";
 import { show } from "./nav.js";
 import { startScanner, stopScanner } from "./scanner.js";
-import { parsePairing, saveToken } from "./token.js";
-import { showList } from "./sessions.js";
 
-// The page belongs to one computer (its address): a code from another one would not work here.
+let onPaired = () => {};
+let pending = null;
+
+async function healthAt(origin) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 5000);
+  try {
+    const response = await fetch(`${origin}/health`, { cache: "no-store", signal: controller.signal });
+    return await response.json();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// The first address that answers as the computer in the code.
+async function locate(pairing) {
+  const own = await healthAt(location.origin).catch(() => null);
+  if (!pairing.id || (own && own.id === pairing.id)) {
+    return own && { id: own.id, name: own.name, origin: location.origin };
+  }
+  const origins = candidateOrigins(pairing);
+  const found = await Promise.any(origins.map(async (origin) => {
+    const health = await healthAt(origin);
+    if (health.id !== pairing.id) throw new Error("another computer");
+    return { id: health.id, name: health.name, origin };
+  })).catch(() => null);
+  return found;
+}
+
+function showCertificateLinks(pairing) {
+  // The browser cannot pin the certificate like the apps do: the person accepts it once per address.
+  const links = candidateOrigins(pairing).map((origin) => {
+    const link = el("a", null, `${origin}/health`);
+    link.href = `${origin}/health`;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    const item = el("li");
+    item.append(link);
+    return item;
+  });
+  $("pair-links").replaceChildren(...links);
+  $("pair-reach").hidden = links.length === 0;
+}
+
 async function pairWith(pairing) {
   setError("pair-error", null);
-  const health = await fetch("/health", { cache: "no-store" }).then((response) => response.json());
-  if (pairing.id && pairing.id !== health.id) {
-    throw new Error(`That code is for ${pairing.name || "another computer"}, but this page is ${health.name}. Scan the code shown by ${health.name}.`);
+  $("pair-reach").hidden = true;
+  const computer = await locate(pairing);
+  if (!computer) {
+    pending = pairing;
+    showCertificateLinks(pairing);
+    throw new Error(`Cannot reach ${pairing.name || "that computer"} from this browser.`);
   }
-  saveToken(pairing.token);
-  await showList();
+  pending = null;
+  save({ ...computer, token: pairing.token });
+  onPaired();
 }
 
 function pair(pairing) {
@@ -35,13 +82,16 @@ function scan() {
 }
 
 export function showPair(error) {
-  show("pair");
+  show("pair", list().length ? "Add a computer" : null);
+  $("pair-reach").hidden = true;
   setError("pair-error", error);
   scan();
 }
 
-export function setUpPairing() {
+export function setUpPairing(paired) {
+  onPaired = paired;
   $("scan-start").onclick = scan;
+  $("pair-retry").onclick = () => { if (pending) pair(pending); };
   $("pair-save").onclick = () => {
     const pairing = parsePairing($("pair-input").value);
     if (!pairing) return setError("pair-error", "That is not a pairing link.");

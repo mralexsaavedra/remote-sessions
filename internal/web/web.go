@@ -17,8 +17,8 @@ func Handler() http.Handler {
 	fileServer := http.StripPrefix("/app/", http.FileServerFS(static))
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		header := w.Header()
-		// The token lives in localStorage: only our own scripts may run, and nothing loads from elsewhere.
-		header.Set("Content-Security-Policy", "default-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'")
+		// The keys live in localStorage: only our own scripts may run. Fetches may go to the other paired computers (HTTPS).
+		header.Set("Content-Security-Policy", "default-src 'self'; img-src 'self' data:; connect-src 'self' https:; frame-ancestors 'none'; base-uri 'none'; form-action 'none'")
 		header.Set("Referrer-Policy", "no-referrer")
 		header.Set("X-Content-Type-Options", "nosniff")
 		// The service worker does the caching; the browser always asks so updates arrive at once.

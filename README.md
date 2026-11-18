@@ -33,6 +33,14 @@ remote-sessions serve [--log]      Run the server in the foreground
 remote-sessions service install|uninstall|restart
 ```
 
+## No app? Use the browser
+
+Every server also serves a web client at `https://<computer>:8787/app/`, an alternative to the store apps for a browser (desktop or phone). It uses the same API and reads the same QR code, with the camera or by pasting the `remotesessions://pair` link that `remote-sessions pair` prints.
+
+- **Certificate:** the browser cannot pin the certificate like the apps do, so it warns that it is self-signed. Accept it only if the fingerprint matches the one `remote-sessions pair` prints.
+- **Several computers:** pick "Add a computer…" and scan another computer's code. The page calls that computer directly, so open its address once (the page shows the links) and accept its certificate too. With more than one computer, "All computers" merges their conversations into one list.
+- Keys stay in the browser's `localStorage`, one per computer; "Forget this computer" removes one.
+
 ## How it works
 
 - The server reads the transcripts Claude Code keeps in `~/.claude/projects` and asks `claude agents --json` which sessions are open.

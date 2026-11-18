@@ -1,6 +1,4 @@
-// The v1 API (docs/API.md) and the messages for its error codes.
-
-import { token } from "./token.js";
+// The v1 API (docs/API.md) on one paired computer, and the messages for its error codes.
 
 export class ApiError extends Error {
   constructor(status, body) {
@@ -13,16 +11,16 @@ export class ApiError extends Error {
 
 let onUnauthorized = () => {};
 
-// Called when the computer rejects the key, e.g. after `pair --rotate`.
+// Called with the computer that rejected its key, e.g. after `pair --rotate`.
 export function whenUnauthorized(handler) {
   onUnauthorized = handler;
 }
 
-export async function api(method, path, body) {
-  const response = await fetch(path, {
+export async function api(computer, method, path, body) {
+  const response = await fetch(computer.origin + path, {
     method,
     headers: {
-      Authorization: `Bearer ${token()}`,
+      Authorization: `Bearer ${computer.token}`,
       ...(body ? { "Content-Type": "application/json" } : {}),
     },
     body: body ? JSON.stringify(body) : undefined,
@@ -31,7 +29,7 @@ export async function api(method, path, body) {
   if (response.status === 204) return null;
   const json = await response.json().catch(() => ({}));
   if (!response.ok) {
-    if (json.code === "unauthorized") onUnauthorized();
+    if (json.code === "unauthorized") onUnauthorized(computer);
     throw new ApiError(response.status, json);
   }
   return json;
@@ -44,9 +42,11 @@ const messages = {
   outside_home: "Only folders inside your home folder can be used.",
 };
 
-export function describe(error) {
+export function describe(error, computer) {
   if (error instanceof ApiError) return messages[error.code] || error.message;
-  return `Cannot reach the computer (${error.message}).`;
+  // A computer reached cross-origin fails the same way when it is off and when this browser has not accepted its certificate.
+  const where = computer ? `${computer.name} (${computer.origin})` : "the computer";
+  return `Cannot reach ${where}. Is it on? If this browser has not accepted its certificate yet, open ${computer ? computer.origin + "/health" : "it"} once and accept it.`;
 }
 
 // Runs a launch call; asks before trusting a folder, as the store apps do.

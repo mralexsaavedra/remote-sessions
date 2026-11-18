@@ -19,6 +19,7 @@
   <header class="bar">
     <button class="icon" id="back" hidden aria-label="Back"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
     <h1 id="title">Remote Sessions</h1>
+    <select id="computer" aria-label="Computer" hidden></select>
     <button class="icon" id="new" hidden aria-label="New conversation"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
   </header>
 
@@ -33,6 +34,11 @@
       <p class="muted" id="scan-status"></p>
       <button class="primary" id="scan-start">Scan the QR code</button>
       <p class="error" id="pair-error" hidden></p>
+      <div id="pair-reach" hidden>
+        <p class="muted">This browser cannot check that computer's certificate like the apps do. Open its address once, accept the certificate warning, then try again:</p>
+        <ul id="pair-links"></ul>
+        <button class="primary" id="pair-retry">Try again</button>
+      </div>
       <details>
         <summary class="muted">Can't scan it? Paste the link</summary>
         <textarea id="pair-input" rows="3" placeholder="remotesessions://pair?…"></textarea>
