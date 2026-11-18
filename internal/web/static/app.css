@@ -60,6 +60,7 @@ body {
   border: 0; border-radius: 8px; padding: 4px 30px 4px 8px; cursor: pointer;
   /* Our own chevron, so it gets breathing room from the edge instead of the native one hugging it. */
   appearance: none; -webkit-appearance: none;
+  field-sizing: content; /* as wide as the chosen option, not the longest one */
   background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a8882' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center / 12px;
 }
 .bar select:focus { outline: none; }
