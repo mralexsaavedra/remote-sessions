@@ -2,7 +2,7 @@
 
 import { api, describe, launch } from "./api.js";
 import { ALL, list, selected } from "./computers.js";
-import { $, ago, el, setError, setOpenLink } from "./dom.js";
+import { $, ago, el, setError, setOpenLink, skeleton } from "./dom.js";
 import { show } from "./nav.js";
 
 const LIST_TIMEOUT = 8000;
@@ -21,9 +21,12 @@ export async function showList() {
   const render = () => {
     if (run !== listRun) return;
     sessions.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
-    const status = pending ? ["Loading…"] : (sessions.length ? [] : ["No conversations yet."]);
+    const status = pending || sessions.length ? [] : ["No conversations yet."];
     $("list-status").textContent = [...errors, ...status].join(" ");
-    $("sessions").replaceChildren(...sessions.map((session) => sessionCard(session, choice === ALL)));
+    // While a computer is still answering, placeholders hold the place of its conversations.
+    const placeholders = pending ? skeleton(sessions.length ? 2 : 6, "card", ["70%", "95%", "40%"]) : [];
+    $("sessions").setAttribute("aria-busy", String(pending > 0));
+    $("sessions").replaceChildren(...sessions.map((session) => sessionCard(session, choice === ALL)), ...placeholders);
   };
   render();
   await Promise.all(computers.map(async (computer) => {
@@ -63,7 +66,8 @@ async function showDetail(session) {
   const { computer } = session;
   show("detail", session.title);
   $("detail-meta").textContent = [computer.name, session.cwd].filter(Boolean).join(" · ");
-  $("messages").replaceChildren(el("li", "muted", "Loading…"));
+  $("messages").setAttribute("aria-busy", "true");
+  $("messages").replaceChildren(...skeleton(4, (index) => (index % 2 ? "assistant" : "user"), ["90%", "75%", "50%"]));
   setError("detail-error", null);
   setOpenLink("open-claude", session.remote && session.remote.url);
   $("connect").hidden = Boolean(session.remote);
@@ -81,6 +85,8 @@ async function showDetail(session) {
     window.scrollTo(0, document.body.scrollHeight);
   } catch (error) {
     $("messages").replaceChildren(el("li", "error", describe(error, computer)));
+  } finally {
+    $("messages").setAttribute("aria-busy", "false");
   }
 }
 

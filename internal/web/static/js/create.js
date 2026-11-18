@@ -2,7 +2,7 @@
 
 import { api, describe, launch } from "./api.js";
 import { selected } from "./computers.js";
-import { $, el, setError, setOpenLink } from "./dom.js";
+import { $, el, setError, setOpenLink, skeleton } from "./dom.js";
 import { show } from "./nav.js";
 
 let currentFolder = null;
@@ -14,7 +14,8 @@ export async function showCreate(path) {
   setError("create-error", null);
   setOpenLink("create-open", null);
   $("create-start").hidden = false;
-  $("folder-path").textContent = "Loading…";
+  $("folder-path").textContent = path || "";
+  $("folders").replaceChildren(...skeleton(6, "card", ["45%"]));
   try {
     const query = path ? `?path=${encodeURIComponent(path)}` : "";
     const listing = await api(computer, "GET", `/v1/folders${query}`);

@@ -31,3 +31,17 @@ export function ago(iso, now = Date.now()) {
   }
   return relative.format(0, "minute");
 }
+
+// Grey placeholders shaped like the content that is on its way; screen readers get aria-busy instead.
+export function skeleton(count, className, lines) {
+  return Array.from({ length: count }, (_, index) => {
+    const item = el("li", `skeleton ${typeof className === "function" ? className(index) : className}`);
+    item.setAttribute("aria-hidden", "true");
+    for (const width of lines) {
+      const bar = el("span", "sk-line");
+      bar.style.width = width;
+      item.append(bar);
+    }
+    return item;
+  });
+}

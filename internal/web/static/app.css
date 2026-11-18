@@ -111,3 +111,17 @@ code { font-size: 13px; overflow-wrap: anywhere; }
 .scanner .frame { position: absolute; inset: 15%; border: 3px solid rgb(255 255 255 / .8); border-radius: 12px; }
 details { margin-top: 16px; }
 summary { cursor: pointer; }
+
+/* Loading placeholders */
+.skeleton { display: grid; gap: 8px; cursor: default; pointer-events: none; }
+#messages li.skeleton { background: var(--card); }
+#messages li.skeleton.user { background: var(--user); margin-left: 15%; }
+.skeleton .sk-line {
+  display: block; height: 12px; border-radius: 6px;
+  background: linear-gradient(90deg, var(--line) 25%, var(--card) 50%, var(--line) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s ease-in-out infinite;
+}
+.skeleton .sk-line:first-child { height: 15px; }
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .skeleton .sk-line { animation: none; } }
