@@ -2,6 +2,7 @@
 // Settings: the paired computers (select, forget, add) and what this page is.
 
 /** @import { Computer } from "./computers.js" */
+import { t } from "./i18n.js";
 import { ALL, forget, list, select, selected } from "./computers.js";
 import { $, el } from "./dom.js";
 import { show } from "./nav.js";
@@ -18,10 +19,10 @@ function computerRow(computer, current) {
   text.append(el("div", "t", computer.name), el("div", "muted", new URL(computer.origin).host));
   const end = el("div", "row");
   if (current) end.append(el("span", "check", "✓"));
-  const remove = el("button", "small", "Forget");
+  const remove = el("button", "small", t("forget"));
   remove.addEventListener("click", (event) => {
     event.stopPropagation();
-    if (!confirm(`Forget ${computer.name} in this browser?`)) return;
+    if (!confirm(t("forget_confirm", { name: computer.name }))) return;
     forget(computer.id);
     if (list().length) renderComputers(); else onAdd();
   });
@@ -37,7 +38,7 @@ function renderComputers() {
 }
 
 export function showSettings() {
-  show("settings", "Settings");
+  show("settings", t("settings"));
   renderComputers();
   $("version").textContent = "";
   fetch("/health", { cache: "no-store" })

@@ -3,6 +3,7 @@
 // A code from this page's computer pairs it; a code from another computer pairs that one through its addresses.
 
 /** @import { Computer, Pairing } from "./computers.js" */
+import { t } from "./i18n.js";
 import { candidateOrigins, healthAt, list, parsePairing, proxiedOrigin, save } from "./computers.js";
 import { $, el, setError } from "./dom.js";
 import { show } from "./nav.js";
@@ -58,7 +59,7 @@ async function pairWith(pairing) {
   if (!computer) {
     pending = pairing;
     showCertificateLinks(pairing);
-    throw new Error(`Cannot reach ${pairing.name || "that computer"} from this browser.`);
+    throw new Error(t("cannot_reach_pairing", { name: pairing.name || t("that_computer") }));
   }
   pending = null;
   save({ ...computer, token: pairing.token });
@@ -85,7 +86,7 @@ function scan() {
 
 /** @param {string | null} [error] */
 export function showPair(error) {
-  show("pair", list().length ? "Add a computer" : null);
+  show("pair", list().length ? t("add_computer") : null);
   $("pair-reach").hidden = true;
   setError("pair-error", error);
   // Phones open the camera at once; on a computer the code is usually on the same screen
@@ -106,7 +107,7 @@ export function setUpPairing(paired) {
   $("pair-retry").onclick = () => { if (pending) pair(pending); };
   $("pair-save").onclick = () => {
     const pairing = parsePairing($("pair-input").value);
-    if (!pairing) return setError("pair-error", "That is not a pairing link.");
+    if (!pairing) return setError("pair-error", t("not_a_link"));
     $("pair-input").value = "";
     pair(pairing);
   };

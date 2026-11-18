@@ -3,6 +3,7 @@
 
 /** @import { Message, Session, SessionInfo } from "./api.js" */
 /** @import { Computer } from "./computers.js" */
+import { t } from "./i18n.js";
 import { api, describe, launch } from "./api.js";
 import { ALL, list, selected } from "./computers.js";
 import { $, ago, el, setError, setOpenLink, skeleton } from "./dom.js";
@@ -22,7 +23,7 @@ function renderProjects() {
   // A project asked for in the address waits here until its option exists.
   const current = $("project").value || $("project").dataset.wanted || "";
   const projects = [...new Set(state.sessions.map(projectOf).filter(Boolean))].sort((a, b) => a.localeCompare(b));
-  $("project").replaceChildren(new Option("All projects", ""), ...projects.map((name) => new Option(name, name)));
+  $("project").replaceChildren(new Option(t("all_projects"), ""), ...projects.map((name) => new Option(name, name)));
   $("project").value = projects.includes(current) ? current : "";
   // Keep the choice while computers are still answering: its project may arrive with them.
   if ($("project").value || !state.pending) delete $("project").dataset.wanted;
@@ -43,8 +44,8 @@ export function paintList() {
   const project = $("project").value || $("project").dataset.wanted || "";
   const shown = state.sessions.filter((session) => matches(session, query, project));
   const status = state.pending ? []
-    : !state.sessions.length ? (state.errors.length ? [] : ["No conversations yet."])
-    : !shown.length ? ["No conversation matches."] : [];
+    : !state.sessions.length ? (state.errors.length ? [] : [t("no_conversations")])
+    : !shown.length ? [t("no_matches")] : [];
   $("list-status").textContent = [...state.errors, ...status].join(" ");
   // While a computer is still answering, placeholders hold the place of its conversations,
   // enough of them to fill the screen.
@@ -102,7 +103,7 @@ function sessionCard(session, showComputer) {
   const item = el("li");
   const badges = el("div");
   if (session.remote) badges.append(el("span", "badge remote", "Remote Control"));
-  else if (session.running) badges.append(el("span", "badge", "Open on the computer"));
+  else if (session.running) badges.append(el("span", "badge", t("badge_open")));
   const where = [showComputer ? session.computer.name : null, session.project, ago(session.updatedAt)];
   item.append(
     el("div", "t", session.title),
@@ -154,7 +155,7 @@ async function showDetail(session) {
 async function connect(session) {
   const button = $("connect");
   button.disabled = true;
-  button.textContent = "Starting Remote Control… (up to 45 s)";
+  button.textContent = t("connecting");
   setError("detail-error", null);
   try {
     const result = await launch((trustFolder) =>
@@ -166,7 +167,7 @@ async function connect(session) {
     setError("detail-error", describe(error, session.computer));
   } finally {
     button.disabled = false;
-    button.textContent = "Connect with Remote Control";
+    button.textContent = t("connect");
   }
 }
 

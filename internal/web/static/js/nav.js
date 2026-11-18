@@ -1,6 +1,7 @@
 // @ts-check
 // Which screen is on, and the bar above it.
 
+import { t } from "./i18n.js";
 import { ALL, list, selected } from "./computers.js";
 import { $, el } from "./dom.js";
 import { stopScanner } from "./scanner.js";
@@ -13,8 +14,8 @@ function renderPicker() {
   const computers = list();
   const choice = selected();
   const options = computers.map((computer) => new Option(computer.name, computer.id));
-  if (computers.length > 1) options.unshift(new Option("All computers", ALL));
-  options.push(new Option("Add a computer…", ADD));
+  if (computers.length > 1) options.unshift(new Option(t("all_computers"), ALL));
+  options.push(new Option(t("add_computer_option"), ADD));
   $("computer").replaceChildren(...options);
   $("computer").value = choice === ALL ? ALL : (choice ? choice.id : ADD);
 }

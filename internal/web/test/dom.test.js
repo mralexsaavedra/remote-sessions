@@ -10,7 +10,7 @@ test("$ finds an element and fails loudly on a missing id", () => {
 
 test("ago describes how long ago something happened", () => {
   const now = Date.parse("2026-11-18T12:00:00Z");
-  const say = (unit, value) => new Intl.RelativeTimeFormat(navigator.language, { numeric: "auto" }).format(value, unit);
+  const say = (unit, value) => new Intl.RelativeTimeFormat("en", { numeric: "auto" }).format(value, unit);
   expect(ago("2026-11-18T11:59:50Z", now)).toBe(say("minute", 0));
   expect(ago("2026-11-18T11:15:00Z", now)).toBe(say("minute", -45));
   expect(ago("2026-11-18T09:00:00Z", now)).toBe(say("hour", -3));

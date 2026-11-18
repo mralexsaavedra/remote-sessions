@@ -140,3 +140,24 @@ test("an unreachable computer shows its error without claiming there are no conv
   await expect(page.locator("#list-status")).toContainText("Cannot reach Beta Box");
   await expect(page.locator("#list-status")).not.toContainText("No conversations yet.");
 });
+
+test.describe("in Spanish", () => {
+  test.use({ locale: "es-ES" });
+
+  test("the page follows the browser's language", async ({ page }) => {
+    await page.goto("/app/");
+    await expect(page.locator("html")).toHaveAttribute("lang", "es");
+    await expect(page.locator("#pair-save")).toHaveText("Vincular");
+    await page.fill("#pair-input", "no es un enlace");
+    await page.click("#pair-save");
+    await expect(page.locator("#pair-error")).toHaveText("Esto no es un enlace de vinculación.");
+    await page.fill("#pair-input", pairingLink(alpha));
+    await page.click("#pair-save");
+    await expect(cards(page)).toHaveCount(2);
+    await expect(page.locator("#search")).toHaveAttribute("placeholder", "Buscar conversaciones");
+    await expect(page.locator("#project option").first()).toHaveText("Todos los proyectos");
+    await page.click("#settings-open");
+    await expect(page.locator("#title")).toHaveText("Ajustes");
+    await expect(page.getByRole("button", { name: "Olvidar" })).toBeVisible();
+  });
+});

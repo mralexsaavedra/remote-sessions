@@ -1,6 +1,8 @@
 // @ts-check
 // DOM helpers. Data from the server is always written with textContent, never as HTML.
 
+import { currentLanguage } from "./i18n.js";
+
 /**
  * Elements whose type matters to the code; every other id is a plain HTMLElement.
  * @typedef {{
@@ -19,6 +21,7 @@
  * @param {K} id
  * @returns {K extends keyof Elements ? Elements[K] : HTMLElement}
  */
+
 export function $(id) {
   const node = document.getElementById(id);
   if (!node) throw new Error(`#${id} is missing from index.html`);
@@ -55,10 +58,11 @@ export function setOpenLink(id, url) {
   if (safe) $(id).href = safe;
 }
 
-const relative = new Intl.RelativeTimeFormat(navigator.language, { numeric: "auto" });
 
 /** @param {string} iso @param {number} [now] */
 export function ago(iso, now = Date.now()) {
+  // Same language as the rest of the page.
+  const relative = new Intl.RelativeTimeFormat(currentLanguage(), { numeric: "auto" });
   const seconds = (new Date(iso).getTime() - now) / 1000;
   /** @type {[Intl.RelativeTimeFormatUnit, number][]} */
   const units = [["day", 86400], ["hour", 3600], ["minute", 60]];

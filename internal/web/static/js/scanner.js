@@ -1,6 +1,7 @@
 // @ts-check
 // Reads QR codes with the camera: BarcodeDetector where the browser has it (Chrome), jsQR elsewhere (Safari).
 
+import { t } from "./i18n.js";
 import { $ } from "./dom.js";
 
 /** @type {MediaStream | null} */
@@ -43,14 +44,14 @@ export async function startScanner(onCode) {
   const mine = generation;
   const status = $("scan-status");
   if (!navigator.mediaDevices?.getUserMedia) {
-    status.textContent = "This browser does not give pages the camera here. Paste the link below.";
+    status.textContent = t("camera_unavailable");
     $("scan-start").hidden = true;
     return;
   }
   const read = await qrReader();
   if (mine !== generation) return;
   if (!read) {
-    status.textContent = "This browser cannot read QR codes. Paste the link below.";
+    status.textContent = t("no_qr_reader");
     $("scan-start").hidden = true;
     return;
   }
@@ -62,8 +63,8 @@ export async function startScanner(onCode) {
     if (mine !== generation) return;
     const error = /** @type {Error} */ (caught);
     status.textContent = error.name === "NotAllowedError"
-      ? "The camera was not allowed. Allow it in the browser's settings and try again, or paste the link below."
-      : `No camera available (${error.name}). Paste the link below.`;
+      ? t("camera_denied")
+      : t("no_camera", { reason: error.name });
     $("scan-start").hidden = false;
     return;
   }
@@ -78,12 +79,12 @@ export async function startScanner(onCode) {
   await video.play().catch(() => {});
   $("scanner").hidden = false;
   $("scan-start").hidden = true;
-  status.textContent = "Point the camera at the code.";
+  status.textContent = t("point_camera");
   while (stream === camera) {
     const text = await read(video).catch(() => null);
     if (text) {
       if (onCode(text)) return;
-      status.textContent = "That QR code is not a Remote Sessions code.";
+      status.textContent = t("not_our_code");
     }
     await new Promise((resolve) => setTimeout(resolve, 150));
   }

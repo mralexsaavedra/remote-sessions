@@ -3,6 +3,7 @@
 
 /** @import { Computer } from "./computers.js" */
 /** @import { Folders } from "./api.js" */
+import { t } from "./i18n.js";
 import { api, describe, launch } from "./api.js";
 import { ALL, selected } from "./computers.js";
 import { $, el, setError, setOpenLink, skeleton } from "./dom.js";
@@ -32,7 +33,7 @@ export async function showCreate(path) {
   const run = ++browseRun;
   // "Start here" waits until this folder is known, so it never starts in a previous one.
   currentFolder = null;
-  show("create", `New conversation on ${target.name}`);
+  show("create", t("new_conversation_on", { name: target.name }));
   setError("create-error", null);
   setOpenLink("create-open", null);
   $("create-start").hidden = true;
@@ -70,7 +71,7 @@ export async function create() {
   const target = computer;
   if (!target || !currentFolder) return;
   button.disabled = true;
-  button.textContent = "Starting… (up to 45 s)";
+  button.textContent = t("starting");
   setError("create-error", null);
   try {
     const title = $("create-title").value.trim();
@@ -81,6 +82,6 @@ export async function create() {
     setError("create-error", describe(error, target));
   } finally {
     button.disabled = false;
-    button.textContent = "Start here";
+    button.textContent = t("start_here");
   }
 }

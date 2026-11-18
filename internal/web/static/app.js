@@ -10,7 +10,10 @@ import { ADD } from "./js/nav.js";
 import { setUpPairing, showPair } from "./js/pair.js";
 import { paintList, showList } from "./js/sessions.js";
 import { setUpSettings, showSettings } from "./js/settings.js";
+import { t, translatePage } from "./js/i18n.js";
 import { readFilters, writeFilters } from "./js/url.js";
+
+translatePage();
 
 // Offline shell. Chrome refuses service workers on a self-signed certificate; the page works without one.
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js", { scope: "/app/" }).catch(() => {});
@@ -25,7 +28,7 @@ setUpPairing(() => {
 });
 whenUnauthorized((computer) => {
   forget(computer.id);
-  showPair(`${computer.name} did not accept the key. Pair it again.`);
+  showPair(t("key_rejected", { name: computer.name }));
 });
 
 $("back").onclick = () => (history.state ? history.back() : home());
