@@ -1,7 +1,7 @@
 // Pairing: the same QR code as the store apps, read with the camera or pasted.
 // A code from this page's computer pairs it; a code from another computer pairs that one through its addresses.
 
-import { candidateOrigins, list, parsePairing, save } from "./computers.js";
+import { candidateOrigins, healthAt, list, parsePairing, proxiedOrigin, save } from "./computers.js";
 import { $, el, setError } from "./dom.js";
 import { show } from "./nav.js";
 import { startScanner, stopScanner } from "./scanner.js";
@@ -9,22 +9,16 @@ import { startScanner, stopScanner } from "./scanner.js";
 let onPaired = () => {};
 let pending = null;
 
-async function healthAt(origin) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 5000);
-  try {
-    const response = await fetch(`${origin}/health`, { cache: "no-store", signal: controller.signal });
-    return await response.json();
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
 // The first address that answers as the computer in the code.
 async function locate(pairing) {
   const own = await healthAt(location.origin).catch(() => null);
   if (!pairing.id || (own && own.id === pairing.id)) {
     return own && { id: own.id, name: own.name, origin: location.origin };
+  }
+  // This page's proxy first: same address and certificate as the page.
+  if (pairing.name) {
+    const health = await healthAt(proxiedOrigin(pairing.name), 2000).catch(() => null);
+    if (health && health.id === pairing.id) return { id: health.id, name: health.name, origin: proxiedOrigin(pairing.name) };
   }
   const origins = candidateOrigins(pairing);
   const found = await Promise.any(origins.map(async (origin) => {

@@ -53,6 +53,34 @@ export function forget(id) {
   persist();
 }
 
+// URL-friendly computer name: "MacBook Pro de Alexander" -> "macbook-pro-de-alexander".
+export const slug = (name) => (name || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+  .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+
+export async function healthAt(origin, timeout = 5000) {
+  const response = await fetch(`${origin}/health`, { cache: "no-store", signal: AbortSignal.timeout(timeout) });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  return response.json();
+}
+
+// A reverse proxy in front of this page may route /<computer-slug>/ to another computer.
+// Reached that way, every computer shares this page's address and certificate: no cross-origin
+// calls and no certificate warning. See README, "One address for every computer".
+export const proxiedOrigin = (name) => `${location.origin}/${slug(name)}`;
+
+// Moves computers paired by their own address to this page's proxy when it now routes to them.
+export async function preferProxy() {
+  const away = computers.filter((computer) => computer.origin !== location.origin && !computer.origin.startsWith(`${location.origin}/`));
+  const moved = await Promise.all(away.map(async (computer) => {
+    const origin = proxiedOrigin(computer.name);
+    const health = await healthAt(origin, 2000).catch(() => null);
+    if (!health || health.id !== computer.id) return false;
+    computer.origin = origin;
+    return true;
+  }));
+  if (moved.some(Boolean)) persist();
+}
+
 // The first version kept a single key for the page's own computer: move it into the list.
 export async function migrate() {
   const token = read(LEGACY_TOKEN_KEY);

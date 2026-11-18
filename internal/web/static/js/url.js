@@ -1,10 +1,8 @@
 // The list's computer, search and project live in the address (?computer=dev&q=loop&project=homelab),
 // so a reload keeps them and a link opens the same view.
 
-import { ALL, list, select, selected } from "./computers.js";
+import { ALL, list, select, selected, slug } from "./computers.js";
 import { $ } from "./dom.js";
-
-const slug = (name) => name.trim().toLowerCase().replace(/\s+/g, "-");
 
 // Applies the address to the store and the filters. Called once, before the first list.
 export function readFilters() {

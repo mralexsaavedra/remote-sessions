@@ -39,6 +39,7 @@ Every server also serves a web client at `https://<computer>:8787/app/`, an alte
 
 - **Certificate:** the browser cannot pin the certificate like the apps do, so it warns that it is self-signed. Accept it only if the fingerprint matches the one `remote-sessions pair` prints.
 - **Several computers:** pick "Add a computer…" and scan another computer's code. The page calls that computer directly, so open its address once (the page shows the links) and accept its certificate too. With more than one computer, "All computers" merges their conversations into one list.
+- **One address for every computer:** behind a reverse proxy with a trusted certificate, route `/<computer-name>/` to each other computer (lowercase, spaces as dashes: "MacBook Pro" becomes `/macbook-pro/`), stripping that prefix. The page finds them there when pairing, and moves already paired ones on its next load, so every call goes to the page's own address: no certificates to accept and no "Not secure" warning.
 - Keys stay in the browser's `localStorage`, one per computer; "Forget this computer" removes one.
 
 ## How it works

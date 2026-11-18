@@ -2,7 +2,7 @@
 // Each screen lives in its own module under js/.
 
 import { whenUnauthorized } from "./js/api.js";
-import { forget, list, migrate, select } from "./js/computers.js";
+import { forget, list, migrate, preferProxy, select } from "./js/computers.js";
 import { create, showCreate } from "./js/create.js";
 import { $ } from "./js/dom.js";
 import { ADD } from "./js/nav.js";
@@ -50,4 +50,4 @@ setUpSettings({
 });
 window.addEventListener("popstate", home);
 
-migrate().then(() => { readFilters(); home(); });
+migrate().then(preferProxy).then(() => { readFilters(); home(); });
