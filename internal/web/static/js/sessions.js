@@ -10,10 +10,13 @@ import { $, ago, el, setError, setOpenLink, skeleton } from "./dom.js";
 import { show } from "./nav.js";
 
 const LIST_TIMEOUT = 8000;
+// With several computers the list waits this long for all of them before showing any,
+// so rows do not jump around as each one answers; a slower one is added after it.
+const SETTLE_TIME = 2000;
 let listRun = 0;
 // What the list shows now: kept so search and the project filter redraw without asking again.
-/** @type {{ sessions: Session[], errors: string[], pending: number, all: boolean }} */
-const state = { sessions: [], errors: [], pending: 0, all: false };
+/** @type {{ sessions: Session[], errors: string[], pending: number, all: boolean, holding: boolean }} */
+const state = { sessions: [], errors: [], pending: 0, all: false, holding: false };
 
 /** @param {Session} session */
 const projectOf = (session) => session.project || "";
@@ -42,7 +45,7 @@ function matches(session, query, project) {
 export function paintList() {
   const query = $("search").value.trim().toLowerCase();
   const project = $("project").value || $("project").dataset.wanted || "";
-  const shown = state.sessions.filter((session) => matches(session, query, project));
+  const shown = state.holding ? [] : state.sessions.filter((session) => matches(session, query, project));
   const status = state.pending ? []
     : !state.sessions.length ? (state.errors.length ? [] : [t("no_conversations")])
     : !shown.length ? [t("no_matches")] : [];
@@ -50,7 +53,7 @@ export function paintList() {
   // While a computer is still answering, placeholders hold the place of its conversations,
   // enough of them to fill the screen.
   const screenful = Math.ceil(window.innerHeight / 90);
-  const placeholders = state.pending ? skeleton(state.sessions.length ? 2 : screenful, "card", ["70%", "95%", "40%"]) : [];
+  const placeholders = state.pending ? skeleton(shown.length ? 2 : screenful, "card", ["70%", "95%", "40%"]) : [];
   $("sessions").setAttribute("aria-busy", String(state.pending > 0));
   $("sessions").replaceChildren(...shown.map((session) => sessionCard(session, state.all)), ...placeholders);
 }
@@ -62,7 +65,7 @@ export async function showList() {
   const run = ++listRun;
   show("list");
   const computers = choice === ALL ? list() : choice ? [choice] : [];
-  Object.assign(state, { sessions: [], errors: [], pending: computers.length, all: choice === ALL });
+  Object.assign(state, { sessions: [], errors: [], pending: computers.length, all: choice === ALL, holding: computers.length > 1 });
   const render = () => {
     if (run !== listRun) return;
     state.sessions.sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
@@ -70,6 +73,13 @@ export async function showList() {
     paintList();
   };
   render();
+  if (state.holding) {
+    setTimeout(() => {
+      if (run !== listRun || !state.holding) return;
+      state.holding = false;
+      render();
+    }, SETTLE_TIME);
+  }
   await Promise.all(computers.map(async (computer) => {
     try {
       /** @type {{ sessions: SessionInfo[] }} */
@@ -78,7 +88,9 @@ export async function showList() {
     } catch (error) {
       if (run === listRun) state.errors.push(describe(error, computer));
     }
-    if (run === listRun) state.pending -= 1;
+    if (run !== listRun) return;
+    state.pending -= 1;
+    if (!state.pending) state.holding = false;
     render();
   }));
 }

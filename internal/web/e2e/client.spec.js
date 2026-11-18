@@ -141,6 +141,31 @@ test("an unreachable computer shows its error without claiming there are no conv
   await expect(page.locator("#list-status")).not.toContainText("No conversations yet.");
 });
 
+test("All computers waits for every computer before showing rows, so they do not jump", async ({ page }) => {
+  await paired(page, [alphaEntry(), betaEntry()], "all");
+  await page.route(`${betaOrigin}/v1/sessions`, async (route) => {
+    await new Promise((done) => setTimeout(done, 1000));
+    await route.continue();
+  });
+  await page.reload();
+  await page.waitForTimeout(500);
+  // Alpha has answered by now, but its rows wait for Beta.
+  await expect(cards(page)).toHaveCount(0);
+  await expect(cards(page)).toHaveCount(3);
+});
+
+test("a slow computer does not hold the others for long", async ({ page }) => {
+  await paired(page, [alphaEntry(), betaEntry()], "all");
+  await page.route(`${betaOrigin}/v1/sessions`, async (route) => {
+    await new Promise((done) => setTimeout(done, 4000));
+    await route.continue();
+  });
+  await page.reload();
+  await expect(cards(page)).toHaveCount(2, { timeout: 3500 });
+  await expect(page.locator("#sessions li.skeleton").first()).toBeVisible();
+  await expect(cards(page)).toHaveCount(3, { timeout: 6000 });
+});
+
 test.describe("in Spanish", () => {
   test.use({ locale: "es-ES" });
 
