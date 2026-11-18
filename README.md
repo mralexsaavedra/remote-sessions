@@ -40,7 +40,9 @@ Every server also serves a web client at `https://<computer>:8787/app/`, an alte
 - **Certificate:** the browser cannot pin the certificate like the apps do, so it warns that it is self-signed. Accept it only if the fingerprint matches the one `remote-sessions pair` prints.
 - **Several computers:** pick "Add a computer…" and scan another computer's code. The page calls that computer directly, so open its address once (the page shows the links) and accept its certificate too. With more than one computer, "All computers" merges their conversations into one list.
 - **One address for every computer:** behind a reverse proxy with a trusted certificate, route `/<computer-name>/` to each other computer (lowercase, spaces as dashes: "MacBook Pro" becomes `/macbook-pro/`), stripping that prefix. The page finds them there when pairing, and moves already paired ones on its next load, so every call goes to the page's own address: no certificates to accept and no "Not secure" warning.
-- Keys stay in the browser's `localStorage`, one per computer; "Forget this computer" removes one.
+- Keys stay in the browser's `localStorage`, one per computer; Settings → "Forget" removes one (`remote-sessions pair --rotate` revokes it on the computer).
+- Search, the project filter and the selected computer live in the address (`?computer=&q=&project=`), so a bookmark or a reload keeps them. The page speaks English or Spanish, following the browser.
+- **Limits compared with the apps:** no Bonjour, so a computer is found only at the addresses in its code (or behind the proxy); without a trusted certificate Chrome refuses the service worker, so the page needs the computer to load; and it is a no-app alternative, not a replacement: the apps stay the main clients.
 
 ## How it works
 
