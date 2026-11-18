@@ -24,7 +24,10 @@ export async function showList() {
     const status = pending || sessions.length ? [] : ["No conversations yet."];
     $("list-status").textContent = [...errors, ...status].join(" ");
     // While a computer is still answering, placeholders hold the place of its conversations.
-    const placeholders = pending ? skeleton(sessions.length ? 2 : 6, "card", ["70%", "95%", "40%"]) : [];
+    // Enough of them to fill the screen, so nothing below the list shows up until it is real.
+    const screenful = Math.ceil(window.innerHeight / 90);
+    const placeholders = pending ? skeleton(sessions.length ? 2 : screenful, "card", ["70%", "95%", "40%"]) : [];
+    $("unpair").hidden = pending > 0 || choice === ALL;
     $("sessions").setAttribute("aria-busy", String(pending > 0));
     $("sessions").replaceChildren(...sessions.map((session) => sessionCard(session, choice === ALL)), ...placeholders);
   };
