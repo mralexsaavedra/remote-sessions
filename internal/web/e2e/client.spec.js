@@ -1,0 +1,118 @@
+import { expect, test } from "@playwright/test";
+import { computers, pairingLink } from "./servers.js";
+
+const { alpha, beta } = computers;
+const betaOrigin = `https://127.0.0.1:${beta.port}`;
+
+/** Pairs computers by writing the store directly, as a returning visitor would have it. */
+async function paired(page, list, current) {
+  await page.goto("/app/");
+  await page.evaluate(([list, current]) => {
+    localStorage.setItem("remote-sessions.computers", JSON.stringify(list));
+    if (current) localStorage.setItem("remote-sessions.current", current);
+  }, [list, current]);
+  await page.goto("/app/");
+}
+
+const alphaEntry = () => ({ id: alpha.id, name: alpha.name, origin: `https://127.0.0.1:${alpha.port}`, token: alpha.token });
+const betaEntry = () => ({ id: beta.id, name: beta.name, origin: betaOrigin, token: beta.token });
+const cards = (page) => page.locator("#sessions li:not(.skeleton)");
+
+test("pairs this page's computer from a pasted link and lists its conversations, newest first", async ({ page }) => {
+  await page.goto("/");
+  await expect(page).toHaveURL(/\/app\/$/);
+  await expect(page.locator("#pair")).toBeVisible();
+  await page.fill("#pair-input", pairingLink(alpha));
+  await page.click("#pair-save");
+  await expect(cards(page)).toHaveCount(2);
+  await expect(cards(page).nth(0)).toContainText("Fix the login form");
+  await expect(cards(page).nth(1)).toContainText("Add rate limiting");
+  await expect(page.locator("#computer")).toHaveValue(alpha.id);
+});
+
+test("rejects a link that is not a pairing link", async ({ page }) => {
+  await page.goto("/app/");
+  await page.fill("#pair-input", "https://example.com");
+  await page.click("#pair-save");
+  await expect(page.locator("#pair-error")).toHaveText("That is not a pairing link.");
+});
+
+test("search and project filter narrow the list and live in the address", async ({ page }) => {
+  await paired(page, [alphaEntry()]);
+  await expect(cards(page)).toHaveCount(2);
+  await page.fill("#search", "rate");
+  await expect(cards(page)).toHaveCount(1);
+  await expect(page).toHaveURL(/\?q=rate$/);
+  await page.fill("#search", "nothing like this");
+  await expect(page.locator("#list-status")).toHaveText("No conversation matches.");
+  await page.fill("#search", "");
+  await page.selectOption("#project", "web");
+  await expect(cards(page)).toHaveCount(1);
+  await expect(cards(page)).toContainText("Fix the login form");
+  await page.reload();
+  await expect(page.locator("#project")).toHaveValue("web");
+  await expect(cards(page)).toHaveCount(1);
+});
+
+test("opens a conversation with its messages and the tools used", async ({ page }) => {
+  await paired(page, [alphaEntry()]);
+  await cards(page).filter({ hasText: "Fix the login form" }).click();
+  await expect(page.locator("#title")).toHaveText("Fix the login form");
+  await expect(page.locator("#detail-meta")).toHaveText(`${alpha.name} · /work/web`);
+  await expect(page.locator("#messages li.user")).toHaveText("The login form rejects valid emails");
+  await expect(page.locator("#messages li.assistant")).toContainText("Fixed the email regex.");
+  await expect(page.locator("#messages li.assistant .tools")).toHaveText("⚙ Read");
+  await page.goBack();
+  await expect(cards(page)).toHaveCount(2);
+});
+
+test("adds a second computer and merges both lists under All computers", async ({ page }) => {
+  await paired(page, [alphaEntry()]);
+  await page.selectOption("#computer", "add");
+  await expect(page.locator("#pair")).toBeVisible();
+  await page.fill("#pair-input", pairingLink(beta));
+  await page.click("#pair-save");
+  await expect(cards(page)).toHaveCount(1);
+  await expect(cards(page)).toContainText("Weekly notes");
+  // Reached at its own address: the page's server has no proxy route for it.
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("remote-sessions.computers")).map((c) => c.origin)))
+    .toContain("https://127.0.0.1:18788");
+  await page.selectOption("#computer", "all");
+  await expect(cards(page)).toHaveCount(3);
+  await expect(cards(page).filter({ hasText: "Weekly notes" })).toContainText(beta.name);
+  await expect(page).toHaveURL(/computer=all/);
+  await expect(page.locator("#new")).toBeHidden();
+});
+
+test("settings select and forget computers", async ({ page }) => {
+  await paired(page, [alphaEntry(), betaEntry()], alpha.id);
+  await page.click("#settings-open");
+  const rows = page.locator("#computers li");
+  await expect(rows).toHaveCount(2);
+  await expect(rows.filter({ hasText: alpha.name })).toContainText("✓");
+  await expect(page.locator("#version")).not.toBeEmpty();
+  page.once("dialog", (dialog) => dialog.accept());
+  await rows.filter({ hasText: beta.name }).getByRole("button", { name: "Forget" }).click();
+  await expect(rows).toHaveCount(1);
+  await rows.first().click();
+  await expect(cards(page)).toHaveCount(2);
+});
+
+test("a new conversation offers recent projects and browses the computer's folders", async ({ page }) => {
+  await paired(page, [alphaEntry()]);
+  await expect(cards(page)).toHaveCount(2);
+  await page.click("#new");
+  await expect(page.locator("#title")).toHaveText(`New conversation on ${alpha.name}`);
+  await expect(page.locator("#recent li")).toHaveCount(2);
+  await expect(page.locator("#recent li").first()).toContainText("/work/web");
+  await expect(page.locator("#folders li")).toHaveText(["📁 Documents", "📁 Projects"]);
+  await page.locator("#folders li", { hasText: "Projects" }).click();
+  await expect(page.locator("#folder-path")).toHaveText(/Projects$/);
+  await expect(page.locator("#folders li")).toHaveText(["‹ ..", "📁 api", "📁 web"]);
+});
+
+test("a computer that rejects its key is forgotten and the page asks to pair again", async ({ page }) => {
+  await paired(page, [{ ...alphaEntry(), token: "revoked-by-pair-rotate" }]);
+  await expect(page.locator("#pair")).toBeVisible();
+  await expect(page.locator("#pair-error")).toHaveText(`${alpha.name} did not accept the key. Pair it again.`);
+});
