@@ -43,7 +43,7 @@ export function paintList() {
   const project = $("project").value || $("project").dataset.wanted || "";
   const shown = state.sessions.filter((session) => matches(session, query, project));
   const status = state.pending ? []
-    : !state.sessions.length ? ["No conversations yet."]
+    : !state.sessions.length ? (state.errors.length ? [] : ["No conversations yet."])
     : !shown.length ? ["No conversation matches."] : [];
   $("list-status").textContent = [...state.errors, ...status].join(" ");
   // While a computer is still answering, placeholders hold the place of its conversations,

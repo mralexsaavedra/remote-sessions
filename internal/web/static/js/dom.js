@@ -49,8 +49,10 @@ export function setError(id, text) {
 // the page shows a link and the second tap opens it (the Claude app if the OS hands it the link).
 /** @param {"create-open" | "open-claude"} id @param {string | null | undefined} url */
 export function setOpenLink(id, url) {
-  $(id).hidden = !url;
-  if (url) $(id).href = url;
+  // The URL comes from a computer's answer: only an https link is shown.
+  const safe = url && /^https:\/\//i.test(url) ? url : null;
+  $(id).hidden = !safe;
+  if (safe) $(id).href = safe;
 }
 
 const relative = new Intl.RelativeTimeFormat(navigator.language, { numeric: "auto" });

@@ -53,3 +53,12 @@ test("writeFilters leaves out the computer with a single one paired", async () =
   writeFilters();
   expect(location.search).toBe("");
 });
+
+test("computers whose names look alike are written and read by id", async () => {
+  const twin = { ...mac, id: "m2", name: "macbook pro" };
+  const { readFilters, writeFilters, store } = await load([dev, mac, twin], "/app/?computer=m2");
+  readFilters();
+  expect(store.selected()).toMatchObject({ id: "m2" });
+  writeFilters();
+  expect(location.search).toBe("?computer=m2");
+});

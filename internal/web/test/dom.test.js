@@ -24,3 +24,13 @@ test("skeleton builds hidden placeholders with one bar per width", () => {
   expect(items[0].getAttribute("aria-hidden")).toBe("true");
   expect([...items[0].children].map((bar) => bar.style.width)).toEqual(["90%", "40%"]);
 });
+
+test("setOpenLink only shows https links from a computer", async () => {
+  const { setOpenLink } = await import("../static/js/dom.js");
+  document.body.innerHTML = '<a id="open-claude" hidden></a>';
+  setOpenLink("open-claude", "javascript:alert(1)");
+  expect(document.getElementById("open-claude").hidden).toBe(true);
+  setOpenLink("open-claude", "https://claude.ai/code/session_1");
+  expect(document.getElementById("open-claude").hidden).toBe(false);
+  expect(document.getElementById("open-claude").getAttribute("href")).toBe("https://claude.ai/code/session_1");
+});

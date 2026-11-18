@@ -1,5 +1,5 @@
 // Caches the app shell so the PWA opens without the computer; API calls always go to the network.
-const CACHE = "remote-sessions-v8";
+const CACHE = "remote-sessions-v9";
 const SHELL = [
   "./", "app.js", "app.css", "jsqr.js", "manifest.webmanifest", "icon-192.png", "apple-touch-icon.png",
   "js/api.js", "js/computers.js", "js/create.js", "js/dom.js", "js/nav.js", "js/pair.js", "js/scanner.js", "js/sessions.js", "js/settings.js", "js/url.js",
@@ -24,10 +24,13 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        const copy = response.clone();
-        caches.open(CACHE).then((cache) => cache.put(event.request, copy));
+        if (response.ok) {
+          const copy = response.clone();
+          // One entry per file: the list's filters live in the query string.
+          caches.open(CACHE).then((cache) => cache.put(url.pathname, copy)).catch(() => {});
+        }
         return response;
       })
-      .catch(() => caches.match(event.request, { ignoreSearch: true })),
+      .catch(async () => (await caches.match(event.request, { ignoreSearch: true })) || Response.error()),
   );
 });

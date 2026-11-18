@@ -116,3 +116,27 @@ test("a computer that rejects its key is forgotten and the page asks to pair aga
   await expect(page.locator("#pair")).toBeVisible();
   await expect(page.locator("#pair-error")).toHaveText(`${alpha.name} did not accept the key. Pair it again.`);
 });
+
+test("start waits for the folder listing and shows nothing stale when it fails", async ({ page }) => {
+  await paired(page, [alphaEntry()]);
+  await expect(cards(page)).toHaveCount(2);
+  let release;
+  const held = new Promise((done) => { release = done; });
+  await page.route("**/v1/folders**", async (route) => { await held; await route.continue(); });
+  await page.click("#new");
+  await expect(page.locator("#create-start")).toBeHidden();
+  release();
+  await expect(page.locator("#create-start")).toBeVisible();
+  await page.unroute("**/v1/folders**");
+  await page.route("**/v1/folders**", (route) => route.fulfill({ status: 400, contentType: "application/json", body: '{"code":"outside_home","error":"x"}' }));
+  await page.locator("#folders li", { hasText: "Projects" }).click();
+  await expect(page.locator("#folder-path")).toHaveText("Only folders inside your home folder can be used.");
+  await expect(page.locator("#folders li")).toHaveCount(0);
+  await expect(page.locator("#create-start")).toBeHidden();
+});
+
+test("an unreachable computer shows its error without claiming there are no conversations", async ({ page }) => {
+  await paired(page, [{ ...betaEntry(), origin: "https://127.0.0.1:1" }]);
+  await expect(page.locator("#list-status")).toContainText("Cannot reach Beta Box");
+  await expect(page.locator("#list-status")).not.toContainText("No conversations yet.");
+});

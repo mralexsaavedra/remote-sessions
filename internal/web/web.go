@@ -1,5 +1,5 @@
 // Package web serves the browser client (a PWA) at /app/, an alternative to the store apps.
-// It uses the same v1 API: the token arrives in the URL fragment when pairing and stays in the browser.
+// It uses the same v1 API: pairing reads the same QR code or link, and each computer's key stays in the browser.
 package web
 
 import (

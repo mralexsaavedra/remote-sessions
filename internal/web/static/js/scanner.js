@@ -5,6 +5,8 @@ import { $ } from "./dom.js";
 
 /** @type {MediaStream | null} */
 let stream = null;
+// Bumped by every start and stop: a start still waiting for the camera gives up when it changes.
+let generation = 0;
 
 /** @returns {Promise<((video: HTMLVideoElement) => Promise<string | null | undefined>) | null>} */
 async function qrReader() {
@@ -38,6 +40,7 @@ async function qrReader() {
 /** @param {(text: string) => boolean} onCode */
 export async function startScanner(onCode) {
   stopScanner();
+  const mine = generation;
   const status = $("scan-status");
   if (!navigator.mediaDevices?.getUserMedia) {
     status.textContent = "This browser does not give pages the camera here. Paste the link below.";
@@ -45,14 +48,18 @@ export async function startScanner(onCode) {
     return;
   }
   const read = await qrReader();
+  if (mine !== generation) return;
   if (!read) {
     status.textContent = "This browser cannot read QR codes. Paste the link below.";
     $("scan-start").hidden = true;
     return;
   }
+  /** @type {MediaStream} */
+  let camera;
   try {
-    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
+    camera = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
   } catch (caught) {
+    if (mine !== generation) return;
     const error = /** @type {Error} */ (caught);
     status.textContent = error.name === "NotAllowedError"
       ? "The camera was not allowed. Allow it in the browser's settings and try again, or paste the link below."
@@ -60,14 +67,19 @@ export async function startScanner(onCode) {
     $("scan-start").hidden = false;
     return;
   }
+  if (mine !== generation) {
+    // Stopped (or restarted) while the browser was asking for the camera.
+    camera.getTracks().forEach((track) => track.stop());
+    return;
+  }
+  stream = camera;
   const video = $("scan-video");
   video.srcObject = stream;
   await video.play().catch(() => {});
   $("scanner").hidden = false;
   $("scan-start").hidden = true;
   status.textContent = "Point the camera at the code.";
-  const mine = stream;
-  while (stream === mine) {
+  while (stream === camera) {
     const text = await read(video).catch(() => null);
     if (text) {
       if (onCode(text)) return;
@@ -78,6 +90,7 @@ export async function startScanner(onCode) {
 }
 
 export function stopScanner() {
+  generation += 1;
   if (stream) stream.getTracks().forEach((track) => track.stop());
   stream = null;
   $("scanner").hidden = true;
