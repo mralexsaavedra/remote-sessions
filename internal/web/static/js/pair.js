@@ -85,7 +85,14 @@ export function showPair(error) {
   show("pair", list().length ? "Add a computer" : null);
   $("pair-reach").hidden = true;
   setError("pair-error", error);
-  scan();
+  // Phones open the camera at once; on a computer the code is usually on the same screen
+  // (and the camera may be a virtual one), so it waits for the button and opens the paste box.
+  if (matchMedia("(pointer: coarse)").matches) scan();
+  else {
+    stopScanner();
+    $("scan-start").hidden = false;
+    document.querySelector("#pair details").open = true;
+  }
 }
 
 export function setUpPairing(paired) {
