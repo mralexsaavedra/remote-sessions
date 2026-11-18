@@ -16,8 +16,10 @@ export function whenUnauthorized(handler) {
   onUnauthorized = handler;
 }
 
-export async function api(computer, method, path, body) {
+// timeout (ms) bounds calls that should be quick, so one computer that is off does not hold the page.
+export async function api(computer, method, path, body, timeout) {
   const response = await fetch(computer.origin + path, {
+    signal: timeout ? AbortSignal.timeout(timeout) : undefined,
     method,
     headers: {
       Authorization: `Bearer ${computer.token}`,

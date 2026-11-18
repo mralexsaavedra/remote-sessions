@@ -5,25 +5,37 @@ import { ALL, list, selected } from "./computers.js";
 import { $, ago, el, setError, setOpenLink } from "./dom.js";
 import { show } from "./nav.js";
 
+const LIST_TIMEOUT = 8000;
+let listRun = 0;
+
+// Each computer's conversations appear as soon as that computer answers; a slow or absent one
+// only adds its error line instead of holding the whole list.
 export async function showList() {
   const choice = selected();
+  const run = ++listRun;
   show("list");
   const computers = choice === ALL ? list() : [choice];
-  $("list-status").textContent = "Loading…";
-  $("sessions").replaceChildren();
-  const results = await Promise.all(computers.map(async (computer) => {
+  const sessions = [];
+  const errors = [];
+  let pending = computers.length;
+  const render = () => {
+    if (run !== listRun) return;
+    sessions.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+    const status = pending ? ["Loading…"] : (sessions.length ? [] : ["No conversations yet."]);
+    $("list-status").textContent = [...errors, ...status].join(" ");
+    $("sessions").replaceChildren(...sessions.map((session) => sessionCard(session, choice === ALL)));
+  };
+  render();
+  await Promise.all(computers.map(async (computer) => {
     try {
-      const { sessions } = await api(computer, "GET", "/v1/sessions");
-      return { sessions: sessions.map((session) => ({ ...session, computer })) };
+      const result = await api(computer, "GET", "/v1/sessions", undefined, LIST_TIMEOUT);
+      sessions.push(...result.sessions.map((session) => ({ ...session, computer })));
     } catch (error) {
-      return { error: describe(error, computer), sessions: [] };
+      errors.push(describe(error, computer));
     }
+    pending -= 1;
+    render();
   }));
-  const sessions = results.flatMap((result) => result.sessions)
-    .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
-  const errors = results.map((result) => result.error).filter(Boolean);
-  $("list-status").textContent = errors.join(" ") || (sessions.length ? "" : "No conversations yet.");
-  $("sessions").replaceChildren(...sessions.map((session) => sessionCard(session, choice === ALL)));
 }
 
 function sessionCard(session, showComputer) {
