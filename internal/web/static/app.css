@@ -127,10 +127,25 @@ summary { cursor: pointer; }
 @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 @media (prefers-reduced-motion: reduce) { .skeleton .sk-line { animation: none; } }
 
-/* Search and project filter above the list */
-.filters { display: flex; gap: 8px; margin-bottom: 12px; }
-.filters input { margin: 0; flex: 1; min-width: 0; }
-.filters select { font: inherit; color: inherit; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 0 10px; max-width: 40%; }
+/* Search and project filter live in the bar on the list view.
+   Wide screens keep them on the bar's row; narrow ones wrap them to a second row. */
+.filters { display: flex; gap: 8px; }
+.filters[hidden] { display: none; }
+.filters input { margin: 0; flex: 1; min-width: 0; padding: 7px 12px; }
+.bar .filters select {
+  flex: 0 1 auto; margin: 0; max-width: 40%;
+  font-size: 15px; font-weight: 400;
+  background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 0 10px;
+}
+.bar .filters select:hover { background: var(--card); }
+@media (min-width: 720px) {
+  .bar .filters { flex: 1 1 auto; max-width: 560px; margin: 0 auto; }
+}
+@media (max-width: 719px) {
+  body.filtering { --bar: calc(env(safe-area-inset-top) + 104px); }
+  .bar { flex-wrap: wrap; align-content: center; row-gap: 8px; }
+  .bar .filters { order: 1; flex: 1 0 100%; }
+}
 
 /* Section labels and settings rows */
 .label { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 20px 0 8px; }

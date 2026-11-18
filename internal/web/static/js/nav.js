@@ -29,5 +29,7 @@ export function show(view, title) {
   $("back").hidden = onList || (view === "pair" && list().length === 0);
   $("new").hidden = !onList || selected() === ALL;
   $("settings-open").hidden = !onList;
+  $("filters").hidden = !onList || list().length === 0;
+  document.body.classList.toggle("filtering", !$("filters").hidden);
   window.scrollTo(0, 0);
 }
