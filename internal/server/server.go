@@ -73,7 +73,33 @@ func (s *Server) Handler() http.Handler {
 	// The browser client (PWA): public files, the token stays in the browser.
 	mux.Handle("GET /app/", web.Handler())
 	mux.Handle("GET /{$}", http.RedirectHandler("/app/", http.StatusFound))
-	return logRequests(mux)
+	return logRequests(allowCrossOrigin(mux))
+}
+
+// allowCrossOrigin lets a browser client served by another paired computer call this API.
+// The token travels in the Authorization header, never in a cookie, so any origin may ask:
+// without the token every call except /health still answers 401.
+func allowCrossOrigin(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/health" && !strings.HasPrefix(r.URL.Path, "/v1/") {
+			next.ServeHTTP(w, r)
+			return
+		}
+		header := w.Header()
+		header.Set("Access-Control-Allow-Origin", "*")
+		if r.Method == http.MethodOptions && r.Header.Get("Access-Control-Request-Method") != "" {
+			header.Set("Access-Control-Allow-Methods", "GET, POST, DELETE")
+			header.Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+			header.Set("Access-Control-Max-Age", "600")
+			// Chrome's Private Network Access asks before a page reaches a LAN address.
+			if r.Header.Get("Access-Control-Request-Private-Network") == "true" {
+				header.Set("Access-Control-Allow-Private-Network", "true")
+			}
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 func (s *Server) auth(next http.HandlerFunc) http.HandlerFunc {
