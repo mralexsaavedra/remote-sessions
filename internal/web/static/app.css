@@ -54,7 +54,14 @@ body {
   border-bottom: 1px solid var(--line);
 }
 .bar h1 { flex: 1; margin: 0; font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.bar select { flex: 1; min-width: 0; font: inherit; font-size: 18px; font-weight: 600; color: var(--text); background: transparent; border: 0; padding: 4px 0; }
+.bar select {
+  flex: 0 1 auto; min-width: 0; max-width: 100%; margin-right: auto;
+  font: inherit; font-size: 18px; font-weight: 600; color: var(--text);
+  background: transparent; border: 0; border-radius: 8px; padding: 4px 6px; cursor: pointer;
+}
+.bar select:focus { outline: none; }
+.bar select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.bar select:hover { background: var(--line); }
 #pair-links { padding-left: 20px; overflow-wrap: anywhere; }
 main {
   padding: calc(var(--bar) + 12px) max(16px, env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + 24px) max(16px, env(safe-area-inset-left));

@@ -29,6 +29,7 @@ $("back").onclick = () => (history.state ? history.back() : home());
 $("new").onclick = () => { history.pushState({ view: "create" }, ""); showCreate(); };
 $("create-start").onclick = create;
 $("computer").onchange = (event) => {
+  event.target.blur();
   if (event.target.value === ADD) {
     history.pushState({ view: "pair" }, "");
     showPair();
