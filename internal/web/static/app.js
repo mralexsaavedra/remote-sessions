@@ -2,12 +2,13 @@
 // Each screen lives in its own module under js/.
 
 import { whenUnauthorized } from "./js/api.js";
-import { forget, list, migrate, select, selected } from "./js/computers.js";
+import { forget, list, migrate, select } from "./js/computers.js";
 import { create, showCreate } from "./js/create.js";
 import { $ } from "./js/dom.js";
 import { ADD } from "./js/nav.js";
 import { setUpPairing, showPair } from "./js/pair.js";
-import { showList } from "./js/sessions.js";
+import { paintList, showList } from "./js/sessions.js";
+import { setUpSettings, showSettings } from "./js/settings.js";
 
 // Offline shell. Chrome refuses service workers on a self-signed certificate; the page works without one.
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js", { scope: "/app/" }).catch(() => {});
@@ -38,12 +39,13 @@ $("computer").onchange = (event) => {
   select(event.target.value);
   showList();
 };
-$("unpair").onclick = () => {
-  const computer = selected();
-  if (!computer || !confirm(`Forget ${computer.name} in this browser?`)) return;
-  forget(computer.id);
-  home();
-};
+$("search").oninput = paintList;
+$("project").onchange = paintList;
+$("settings-open").onclick = () => { history.pushState({ view: "settings" }, ""); showSettings(); };
+setUpSettings({
+  done: () => (history.state ? history.back() : home()),
+  add: () => { history.replaceState({ view: "pair" }, ""); showPair(); },
+});
 window.addEventListener("popstate", home);
 
 migrate().then(home);

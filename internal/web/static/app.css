@@ -98,12 +98,13 @@ code { font-size: 13px; overflow-wrap: anywhere; }
 #messages li.user { background: var(--user); margin-left: 15%; }
 #messages li .tools { display: block; color: var(--muted); font-size: 13px; margin-top: 4px; }
 .actions { position: sticky; bottom: 0; display: grid; gap: 8px; padding: 8px 0 calc(env(safe-area-inset-bottom) + 8px); background: var(--bg); }
-#unpair { margin-top: 16px; }
 
 @media (min-width: 720px) {
-  /* Visible buttons share the row; a lone one takes it whole instead of sitting in the left half. */
-  .actions { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
-  .actions > .error, .actions > input { grid-column: 1 / -1; }
+  /* Visible buttons share the row and a lone one takes it whole; errors and inputs get their own line. */
+  .actions { display: flex; flex-wrap: wrap; }
+  .actions > * { flex: 1 1 240px; }
+  .actions > .error, .actions > input { flex-basis: 100%; }
+}
 }
 
 .scanner { position: relative; margin: 12px 0; border-radius: 14px; overflow: hidden; background: #000; aspect-ratio: 1; max-height: 60dvh; }
@@ -125,3 +126,22 @@ summary { cursor: pointer; }
 .skeleton .sk-line:first-child { height: 15px; }
 @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 @media (prefers-reduced-motion: reduce) { .skeleton .sk-line { animation: none; } }
+
+/* Search and project filter above the list */
+.filters { display: flex; gap: 8px; margin-bottom: 12px; }
+.filters input { margin: 0; flex: 1; min-width: 0; }
+.filters select { font: inherit; color: inherit; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 0 10px; max-width: 40%; }
+
+/* Section labels and settings rows */
+.label { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 20px 0 8px; }
+.split { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.row { display: flex; align-items: center; gap: 10px; }
+.check { color: var(--accent); font-weight: 700; }
+button.small { padding: 4px 10px; font-size: 14px; width: auto; }
+.rows a { color: var(--accent); text-decoration: none; display: block; }
+#settings > button { margin: 8px 0; }
+#recent .path { font-size: 12px; overflow-wrap: anywhere; }
+
+/* Conversation cards: a chevron says they open */
+#sessions li:not(.skeleton) { position: relative; padding-right: 34px; }
+#sessions li:not(.skeleton)::after { content: "›"; position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 22px; }

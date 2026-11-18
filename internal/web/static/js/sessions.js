@@ -7,6 +7,42 @@ import { show } from "./nav.js";
 
 const LIST_TIMEOUT = 8000;
 let listRun = 0;
+// What the list shows now: kept so search and the project filter redraw without asking again.
+const state = { sessions: [], errors: [], pending: 0, all: false };
+
+const projectOf = (session) => session.project || "";
+
+// The project filter offers the projects of the conversations loaded so far.
+function renderProjects() {
+  const current = $("project").value;
+  const projects = [...new Set(state.sessions.map(projectOf).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+  $("project").replaceChildren(new Option("All projects", ""), ...projects.map((name) => new Option(name, name)));
+  $("project").value = projects.includes(current) ? current : "";
+  $("project").hidden = projects.length < 2;
+}
+
+function matches(session, query, project) {
+  if (project && projectOf(session) !== project) return false;
+  if (!query) return true;
+  const text = [session.title, session.lastPrompt, session.project, session.cwd, state.all ? session.computer.name : ""].join(" ").toLowerCase();
+  return query.split(/\s+/).every((word) => text.includes(word));
+}
+
+export function paintList() {
+  const query = $("search").value.trim().toLowerCase();
+  const project = $("project").value;
+  const shown = state.sessions.filter((session) => matches(session, query, project));
+  const status = state.pending ? []
+    : !state.sessions.length ? ["No conversations yet."]
+    : !shown.length ? ["No conversation matches."] : [];
+  $("list-status").textContent = [...state.errors, ...status].join(" ");
+  // While a computer is still answering, placeholders hold the place of its conversations,
+  // enough of them to fill the screen.
+  const screenful = Math.ceil(window.innerHeight / 90);
+  const placeholders = state.pending ? skeleton(state.sessions.length ? 2 : screenful, "card", ["70%", "95%", "40%"]) : [];
+  $("sessions").setAttribute("aria-busy", String(state.pending > 0));
+  $("sessions").replaceChildren(...shown.map((session) => sessionCard(session, state.all)), ...placeholders);
+}
 
 // Each computer's conversations appear as soon as that computer answers; a slow or absent one
 // only adds its error line instead of holding the whole list.
@@ -15,33 +51,33 @@ export async function showList() {
   const run = ++listRun;
   show("list");
   const computers = choice === ALL ? list() : [choice];
-  const sessions = [];
-  const errors = [];
-  let pending = computers.length;
+  Object.assign(state, { sessions: [], errors: [], pending: computers.length, all: choice === ALL });
   const render = () => {
     if (run !== listRun) return;
-    sessions.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
-    const status = pending || sessions.length ? [] : ["No conversations yet."];
-    $("list-status").textContent = [...errors, ...status].join(" ");
-    // While a computer is still answering, placeholders hold the place of its conversations.
-    // Enough of them to fill the screen, so nothing below the list shows up until it is real.
-    const screenful = Math.ceil(window.innerHeight / 90);
-    const placeholders = pending ? skeleton(sessions.length ? 2 : screenful, "card", ["70%", "95%", "40%"]) : [];
-    $("unpair").hidden = pending > 0 || choice === ALL;
-    $("sessions").setAttribute("aria-busy", String(pending > 0));
-    $("sessions").replaceChildren(...sessions.map((session) => sessionCard(session, choice === ALL)), ...placeholders);
+    state.sessions.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+    renderProjects();
+    paintList();
   };
   render();
   await Promise.all(computers.map(async (computer) => {
     try {
       const result = await api(computer, "GET", "/v1/sessions", undefined, LIST_TIMEOUT);
-      sessions.push(...result.sessions.map((session) => ({ ...session, computer })));
+      if (run === listRun) state.sessions.push(...result.sessions.map((session) => ({ ...session, computer })));
     } catch (error) {
-      errors.push(describe(error, computer));
+      if (run === listRun) state.errors.push(describe(error, computer));
     }
-    pending -= 1;
+    if (run === listRun) state.pending -= 1;
     render();
   }));
+}
+
+// Folders where this computer's conversations ran, newest first: the new-conversation shortcut.
+export function recentFolders(computer) {
+  const seen = new Set();
+  return state.sessions
+    .filter((session) => session.computer.id === computer.id && session.cwd && !seen.has(session.cwd) && seen.add(session.cwd))
+    .slice(0, 8)
+    .map((session) => ({ name: session.project || session.cwd, path: session.cwd }));
 }
 
 function sessionCard(session, showComputer) {

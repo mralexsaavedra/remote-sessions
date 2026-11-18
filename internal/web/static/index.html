@@ -20,6 +20,7 @@
     <button class="icon" id="back" hidden aria-label="Back"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
     <h1 id="title">Remote Sessions</h1>
     <select id="computer" aria-label="Computer" hidden></select>
+    <button class="icon" id="settings-open" hidden aria-label="Settings"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
     <button class="icon" id="new" hidden aria-label="New conversation"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
   </header>
 
@@ -48,9 +49,12 @@
 
     <!-- Conversation list -->
     <section id="list" hidden>
+      <div class="filters">
+        <input id="search" type="search" placeholder="Search conversations" aria-label="Search conversations" autocomplete="off">
+        <select id="project" aria-label="Project"></select>
+      </div>
       <p class="muted" id="list-status"></p>
       <ul id="sessions" class="cards"></ul>
-      <button id="unpair">Forget this computer</button>
     </section>
 
     <!-- One conversation -->
@@ -67,6 +71,10 @@
 
     <!-- New conversation: pick a folder -->
     <section id="create" hidden>
+      <p class="muted">Claude Code starts in the folder you pick and opens in the Claude app with Remote Control.</p>
+      <h2 class="label" id="recent-label" hidden>Recent projects</h2>
+      <ul id="recent" class="cards"></ul>
+      <h2 class="label">Browse</h2>
       <p class="muted" id="folder-path"></p>
       <ul id="folders" class="cards"></ul>
       <div class="actions">
@@ -75,6 +83,18 @@
         <a class="primary" id="create-open" hidden target="_blank" rel="noopener noreferrer">Open in Claude</a>
         <button class="primary" id="create-start">Start here</button>
       </div>
+    </section>
+    <!-- Settings: the paired computers, like the store apps -->
+    <section id="settings" hidden>
+      <h2 class="label">Computers</h2>
+      <ul id="computers" class="cards rows"></ul>
+      <button id="settings-add">+ Add a computer</button>
+      <p class="muted">Forgetting a computer only removes its key from this browser. To revoke access from the computer, run <code>remote-sessions pair --rotate</code>.</p>
+      <h2 class="label">About</h2>
+      <ul class="cards rows">
+        <li><a href="https://github.com/antoniolg/remote-sessions" target="_blank" rel="noopener noreferrer">Source code</a></li>
+        <li class="split"><span>Version</span><span class="muted" id="version"></span></li>
+      </ul>
     </section>
   </main>
 

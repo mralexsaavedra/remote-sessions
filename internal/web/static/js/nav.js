@@ -4,7 +4,7 @@ import { ALL, list, selected } from "./computers.js";
 import { $, el } from "./dom.js";
 import { stopScanner } from "./scanner.js";
 
-const views = ["pair", "list", "detail", "create"];
+const views = ["pair", "list", "detail", "create", "settings"];
 export const ADD = "add";
 
 // The computer picker, like the store apps: one computer, all of them, or a new one.
@@ -28,6 +28,6 @@ export function show(view, title) {
   if (onList) renderPicker();
   $("back").hidden = onList || (view === "pair" && list().length === 0);
   $("new").hidden = !onList || selected() === ALL;
-  $("unpair").hidden = selected() === ALL;
+  $("settings-open").hidden = !onList;
   window.scrollTo(0, 0);
 }

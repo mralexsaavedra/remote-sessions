@@ -4,12 +4,18 @@ import { api, describe, launch } from "./api.js";
 import { selected } from "./computers.js";
 import { $, el, setError, setOpenLink, skeleton } from "./dom.js";
 import { show } from "./nav.js";
+import { recentFolders } from "./sessions.js";
 
 let currentFolder = null;
 let computer = null;
 
 export async function showCreate(path) {
-  if (!path) computer = selected();
+  if (!path) {
+    computer = selected();
+    const recent = recentFolders(computer);
+    $("recent-label").hidden = recent.length === 0;
+    $("recent").replaceChildren(...recent.map((folder) => folderItem(folder.name, folder.path, folder.path)));
+  }
   show("create", `New conversation on ${computer.name}`);
   setError("create-error", null);
   setOpenLink("create-open", null);
@@ -30,8 +36,9 @@ export async function showCreate(path) {
   }
 }
 
-function folderItem(label, path) {
+function folderItem(label, path, detail) {
   const item = el("li", null, label);
+  if (detail) item.append(el("div", "muted path", detail));
   item.addEventListener("click", () => showCreate(path));
   return item;
 }
