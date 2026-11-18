@@ -1,3 +1,4 @@
+// @ts-check
 // Remote Sessions web client: the store apps' features on top of the same v1 API (docs/API.md).
 // Each screen lives in its own module under js/.
 
@@ -30,14 +31,15 @@ whenUnauthorized((computer) => {
 $("back").onclick = () => (history.state ? history.back() : home());
 $("new").onclick = () => { history.pushState({ view: "create" }, ""); showCreate(); };
 $("create-start").onclick = create;
-$("computer").onchange = (event) => {
-  event.target.blur();
-  if (event.target.value === ADD) {
+$("computer").onchange = () => {
+  const picker = $("computer");
+  picker.blur();
+  if (picker.value === ADD) {
     history.pushState({ view: "pair" }, "");
     showPair();
     return;
   }
-  select(event.target.value);
+  select(picker.value);
   writeFilters();
   showList();
 };

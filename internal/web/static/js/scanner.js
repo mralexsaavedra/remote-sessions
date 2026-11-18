@@ -1,21 +1,25 @@
+// @ts-check
 // Reads QR codes with the camera: BarcodeDetector where the browser has it (Chrome), jsQR elsewhere (Safari).
 
 import { $ } from "./dom.js";
 
+/** @type {MediaStream | null} */
 let stream = null;
 
+/** @returns {Promise<((video: HTMLVideoElement) => Promise<string | null | undefined>) | null>} */
 async function qrReader() {
   if ("BarcodeDetector" in window) {
-    const formats = await BarcodeDetector.getSupportedFormats().catch(() => []);
+    const formats = await BarcodeDetector.getSupportedFormats().catch(() => /** @type {string[]} */ ([]));
     if (formats.includes("qr_code")) {
       const detector = new BarcodeDetector({ formats: ["qr_code"] });
       return async (video) => (await detector.detect(video))[0]?.rawValue;
     }
   }
   // Decode the frames in JavaScript. Terminals often draw the code light on dark, hence both inversions.
-  if (window.jsQR) {
-    const canvas = document.createElement("canvas");
-    const context = canvas.getContext("2d", { willReadFrequently: true });
+  const jsQR = window.jsQR;
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  if (jsQR && context) {
     return async (video) => {
       const size = Math.min(video.videoWidth, video.videoHeight, 720);
       if (!size) return null;
@@ -24,13 +28,14 @@ async function qrReader() {
       canvas.height = Math.round(video.videoHeight * scale);
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
       const image = context.getImageData(0, 0, canvas.width, canvas.height);
-      return window.jsQR(image.data, image.width, image.height, { inversionAttempts: "attemptBoth" })?.data;
+      return jsQR(image.data, image.width, image.height, { inversionAttempts: "attemptBoth" })?.data;
     };
   }
   return null;
 }
 
 // Scans until onCode accepts a code (returns true); the camera stops before onCode's work goes on.
+/** @param {(text: string) => boolean} onCode */
 export async function startScanner(onCode) {
   stopScanner();
   const status = $("scan-status");
@@ -47,7 +52,8 @@ export async function startScanner(onCode) {
   }
   try {
     stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
-  } catch (error) {
+  } catch (caught) {
+    const error = /** @type {Error} */ (caught);
     status.textContent = error.name === "NotAllowedError"
       ? "The camera was not allowed. Allow it in the browser's settings and try again, or paste the link below."
       : `No camera available (${error.name}). Paste the link below.`;

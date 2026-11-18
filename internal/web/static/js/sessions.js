@@ -1,5 +1,8 @@
+// @ts-check
 // The conversation list (one computer or all of them) and one conversation, with Remote Control.
 
+/** @import { Message, Session, SessionInfo } from "./api.js" */
+/** @import { Computer } from "./computers.js" */
 import { api, describe, launch } from "./api.js";
 import { ALL, list, selected } from "./computers.js";
 import { $, ago, el, setError, setOpenLink, skeleton } from "./dom.js";
@@ -8,8 +11,10 @@ import { show } from "./nav.js";
 const LIST_TIMEOUT = 8000;
 let listRun = 0;
 // What the list shows now: kept so search and the project filter redraw without asking again.
+/** @type {{ sessions: Session[], errors: string[], pending: number, all: boolean }} */
 const state = { sessions: [], errors: [], pending: 0, all: false };
 
+/** @param {Session} session */
 const projectOf = (session) => session.project || "";
 
 // The project filter offers the projects of the conversations loaded so far.
@@ -25,6 +30,7 @@ function renderProjects() {
   $("project").hidden = projects.length < 2;
 }
 
+/** @param {Session} session @param {string} query lowercase words @param {string} project */
 function matches(session, query, project) {
   if (project && projectOf(session) !== project) return false;
   if (!query) return true;
@@ -54,17 +60,18 @@ export async function showList() {
   const choice = selected();
   const run = ++listRun;
   show("list");
-  const computers = choice === ALL ? list() : [choice];
+  const computers = choice === ALL ? list() : choice ? [choice] : [];
   Object.assign(state, { sessions: [], errors: [], pending: computers.length, all: choice === ALL });
   const render = () => {
     if (run !== listRun) return;
-    state.sessions.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+    state.sessions.sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
     renderProjects();
     paintList();
   };
   render();
   await Promise.all(computers.map(async (computer) => {
     try {
+      /** @type {{ sessions: SessionInfo[] }} */
       const result = await api(computer, "GET", "/v1/sessions", undefined, LIST_TIMEOUT);
       if (run === listRun) state.sessions.push(...result.sessions.map((session) => ({ ...session, computer })));
     } catch (error) {
@@ -76,14 +83,21 @@ export async function showList() {
 }
 
 // Folders where this computer's conversations ran, newest first: the new-conversation shortcut.
+/** @param {Computer} computer @returns {{ name: string, path: string }[]} */
 export function recentFolders(computer) {
   const seen = new Set();
-  return state.sessions
-    .filter((session) => session.computer.id === computer.id && session.cwd && !seen.has(session.cwd) && seen.add(session.cwd))
-    .slice(0, 8)
-    .map((session) => ({ name: session.project || session.cwd, path: session.cwd }));
+  /** @type {{ name: string, path: string }[]} */
+  const folders = [];
+  for (const session of state.sessions) {
+    if (folders.length === 8) break;
+    if (session.computer.id !== computer.id || !session.cwd || seen.has(session.cwd)) continue;
+    seen.add(session.cwd);
+    folders.push({ name: session.project || session.cwd, path: session.cwd });
+  }
+  return folders;
 }
 
+/** @param {Session} session @param {boolean} showComputer */
 function sessionCard(session, showComputer) {
   const item = el("li");
   const badges = el("div");
@@ -103,8 +117,10 @@ function sessionCard(session, showComputer) {
   return item;
 }
 
+/** @param {Session} session */
 const remoteControlPath = (session) => `/v1/sessions/${encodeURIComponent(session.id)}/remote-control`;
 
+/** @param {Session} session */
 async function showDetail(session) {
   const { computer } = session;
   show("detail", session.title);
@@ -119,6 +135,7 @@ async function showDetail(session) {
   $("stop").hidden = !(session.running && session.running.kind === "remote-sessions");
   $("stop").onclick = () => stop(session);
   try {
+    /** @type {{ messages: Message[] }} */
     const { messages } = await api(computer, "GET", `/v1/sessions/${encodeURIComponent(session.id)}/messages?limit=60`);
     $("messages").replaceChildren(...messages.map((message) => {
       const item = el("li", message.role, message.text);
@@ -133,6 +150,7 @@ async function showDetail(session) {
   }
 }
 
+/** @param {Session} session */
 async function connect(session) {
   const button = $("connect");
   button.disabled = true;
@@ -152,6 +170,7 @@ async function connect(session) {
   }
 }
 
+/** @param {Session} session */
 async function stop(session) {
   try {
     await api(session.computer, "DELETE", remoteControlPath(session));

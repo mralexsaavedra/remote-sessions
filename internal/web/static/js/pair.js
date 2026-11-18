@@ -1,15 +1,20 @@
+// @ts-check
 // Pairing: the same QR code as the store apps, read with the camera or pasted.
 // A code from this page's computer pairs it; a code from another computer pairs that one through its addresses.
 
+/** @import { Computer, Pairing } from "./computers.js" */
 import { candidateOrigins, healthAt, list, parsePairing, proxiedOrigin, save } from "./computers.js";
 import { $, el, setError } from "./dom.js";
 import { show } from "./nav.js";
 import { startScanner, stopScanner } from "./scanner.js";
 
+/** @type {() => void} */
 let onPaired = () => {};
+/** @type {Pairing | null} */
 let pending = null;
 
 // The first address that answers as the computer in the code.
+/** @param {Pairing} pairing @returns {Promise<Omit<Computer, "token"> | null>} */
 async function locate(pairing) {
   const own = await healthAt(location.origin).catch(() => null);
   if (!pairing.id || (own && own.id === pairing.id)) {
@@ -29,6 +34,7 @@ async function locate(pairing) {
   return found;
 }
 
+/** @param {Pairing} pairing */
 function showCertificateLinks(pairing) {
   // The browser cannot pin the certificate like the apps do: the person accepts it once per address.
   const links = candidateOrigins(pairing).map((origin) => {
@@ -44,6 +50,7 @@ function showCertificateLinks(pairing) {
   $("pair-reach").hidden = links.length === 0;
 }
 
+/** @param {Pairing} pairing */
 async function pairWith(pairing) {
   setError("pair-error", null);
   $("pair-reach").hidden = true;
@@ -58,6 +65,7 @@ async function pairWith(pairing) {
   onPaired();
 }
 
+/** @param {Pairing} pairing */
 function pair(pairing) {
   pairWith(pairing).catch((error) => {
     setError("pair-error", error.message);
@@ -75,6 +83,7 @@ function scan() {
   });
 }
 
+/** @param {string | null} [error] */
 export function showPair(error) {
   show("pair", list().length ? "Add a computer" : null);
   $("pair-reach").hidden = true;
@@ -85,10 +94,12 @@ export function showPair(error) {
   else {
     stopScanner();
     $("scan-start").hidden = false;
-    document.querySelector("#pair details").open = true;
+    const details = /** @type {HTMLDetailsElement | null} */ (document.querySelector("#pair details"));
+    if (details) details.open = true;
   }
 }
 
+/** @param {() => void} paired */
 export function setUpPairing(paired) {
   onPaired = paired;
   $("scan-start").onclick = scan;

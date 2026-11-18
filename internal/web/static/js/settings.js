@@ -1,12 +1,17 @@
+// @ts-check
 // Settings: the paired computers (select, forget, add) and what this page is.
 
-import { forget, list, select, selected } from "./computers.js";
+/** @import { Computer } from "./computers.js" */
+import { ALL, forget, list, select, selected } from "./computers.js";
 import { $, el } from "./dom.js";
 import { show } from "./nav.js";
 
+/** @type {() => void} */
 let onDone = () => {};
+/** @type {() => void} */
 let onAdd = () => {};
 
+/** @param {Computer} computer @param {boolean} current */
 function computerRow(computer, current) {
   const item = el("li", "split");
   const text = el("div");
@@ -28,7 +33,7 @@ function computerRow(computer, current) {
 
 function renderComputers() {
   const choice = selected();
-  $("computers").replaceChildren(...list().map((computer) => computerRow(computer, choice && choice.id === computer.id)));
+  $("computers").replaceChildren(...list().map((computer) => computerRow(computer, choice !== ALL && choice?.id === computer.id)));
 }
 
 export function showSettings() {
@@ -41,6 +46,7 @@ export function showSettings() {
     .catch(() => {});
 }
 
+/** @param {{ done: () => void, add: () => void }} handlers */
 export function setUpSettings({ done, add }) {
   onDone = done;
   onAdd = add;

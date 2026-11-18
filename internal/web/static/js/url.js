@@ -1,3 +1,4 @@
+// @ts-check
 // The list's computer, search and project live in the address (?computer=dev&q=loop&project=homelab),
 // so a reload keeps them and a link opens the same view.
 

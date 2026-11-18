@@ -1,3 +1,4 @@
+// @ts-check
 // Which screen is on, and the bar above it.
 
 import { ALL, list, selected } from "./computers.js";
@@ -18,6 +19,10 @@ function renderPicker() {
   $("computer").value = choice === ALL ? ALL : (choice ? choice.id : ADD);
 }
 
+/**
+ * @param {"pair" | "list" | "detail" | "create" | "settings"} view
+ * @param {string | null} [title]
+ */
 export function show(view, title) {
   if (view !== "pair") stopScanner();
   for (const name of views) $(name).hidden = name !== view;
